@@ -1,12 +1,10 @@
 # -*- coding: utf-8 -*-
-#!/usr/bin/env python
+# !/usr/bin/env python
 
 import re
-import sys
 from os import path
-from setuptools import setup, find_packages
 
-PY26 = sys.version_info[:2] == (2, 6,)
+from setuptools import find_packages, setup
 
 requirements = [
     'Flask>=0.8',
@@ -17,7 +15,6 @@ requirements = [
     'requests-mauth',
     'pycrypto'
 ]
-
 
 version_file = path.join(
     path.dirname(__file__),
@@ -31,7 +28,6 @@ with open(version_file, 'r') as fp:
         re.M
     )
     version = m.groups(1)[0]
-
 
 setup(
     name='Flask-MAuth',
@@ -56,12 +52,11 @@ setup(
     zip_safe=False,
     include_package_data=True,
     platforms='any',
-    test_suite = 'tests',
+    test_suite='tests',
     install_requires=requirements,
     tests_require=['mock>=0.8'],
     # Install these with "pip install -e '.[paging]'" or '.[docs]'
     extras_require={
-        'paging': 'pycrypto>=2.6',
         'docs': 'sphinx',
     }
 )
