@@ -42,6 +42,12 @@ setup(
     include_package_data=True,
     platforms='any',
     test_suite='tests',
+    install_requires=["Flask",
+                      "six",
+                      "rsa",
+                      "cachetools",
+                      "requests",
+                      "requests-mauth"],
     tests_require=['mock'],
     extras_require={
         'docs': 'sphinx',

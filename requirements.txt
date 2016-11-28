@@ -1,6 +1,0 @@
-Flask
-six
-rsa
-cachetools
-requests-mauth
-requests
