@@ -1,22 +1,39 @@
 # -*- coding: utf-8 -*-
 
+import abc
 import datetime
 import json
-from base64 import b64decode, b64encode
-
-import werkzeug
-from six.moves.urllib.parse import urljoin, urlparse
+from base64 import b64encode
 
 import requests
-from Crypto.PublicKey import RSA
+from six.moves.urllib.parse import urljoin
 
+from flask_mauth.mauth.signature import Signature
+from flask_mauth.cacher import SecurityTokenCacher
 from flask_mauth import settings
 from flask_mauth.exceptions import InauthenticError, UnableToAuthenticateError
-from flask_mauth.security_token_cacher import SecurityTokenCacher
+from flask_mauth.rsa_public_decrypt import RSAPublicKey
 
-__author__ = 'glow'
+
+def mws_attr(request):
+    """
+    Extract the MWS Headers from a Request
+    :param request: A request object
+    :type request:
+    :return:
+    """
+    token, app_uuid, signature, mws_time = "", "", "", ""
+    if settings.x_mws_authentication in request.headers:
+        token, app_uuid, signature = settings.signature_info.match(
+            request.headers.get(settings.x_mws_authentication)).groups()
+    if settings.x_mws_time in request.headers:
+        mws_time = request.headers.get(settings.x_mws_time)
+    return token, app_uuid, signature, mws_time
+
 
 class MAuthAuthenticator(object):
+    __metaclass__ = abc.ABCMeta
+
     ALLOWED_DRIFT_SECONDS = 300
 
     def __init__(self, mauth_auth, logger, mauth_base_url, mauth_api_version):
@@ -37,34 +54,36 @@ class MAuthAuthenticator(object):
 
     def authenticate(self, request):
         """
-        Authenticate the request
-        :param request:
+        Authenticate the request, by checking all the sub-category of issues
+        :param request: request like object
         """
-        if self.authentication_present(request):
-            if self.time_valid(request):
-                if self.token_valid(request):
-                    return self.signature_valid(request)
+        if self.authentication_present(request) and self.time_valid(request) and \
+                self.token_valid(request) and self.signature_valid(request):
+            return True
         return False
 
     def is_authentic(self, request):
+        """
+        Overall Wrapper for mauth
+        :param request:
+        :return:
+        """
         self.log_authentication_request(request)
+        authentic = False
         try:
-            status = self.authenticate(request)
+            authentic = self.authenticate(request)
         except InauthenticError as exc:
-            self.log_authentication_error(request, exc.message)
-        return False
-
-    def log_authentication_error(self, request, message):
-        pass
-
-    def log_authentication_request(self, request):
-        pass
+            self.log_authentication_error(request, str(exc))
+        except UnableToAuthenticateError as exc:
+            self.log_authentication_error(request, str(exc))
+        return authentic
 
     def authentication_present(self, request):
         """
-        Is the authentication header present (assuming request has a headers attribute) that
+        Is the mauth header present (assuming request has a headers attribute) that
         can be treated like a dict
         :param request: Request like object
+        :type request: werkzeug.wrappers.BaseRequest
         :rtype: bool
         :return: success
         """
@@ -77,6 +96,7 @@ class MAuthAuthenticator(object):
         """
         Is the time of the request within the allowed drift?
         :param request: Request like object
+        :type request: werkzeug.wrappers.BaseRequest
         :rtype: bool
         :return: success
         """
@@ -101,38 +121,74 @@ class MAuthAuthenticator(object):
     def token_valid(self, request):
         """
         Is the message signed correctly?
-        :param request: Request like object
+        :param request: Request object
+        :type request: werkzeug.wrappers.BaseRequest
         :rtype: bool
         :return: success
         """
         if not settings.signature_info.match(request.headers.get(settings.x_mws_authentication)):
             raise InauthenticError("Token verification failed for {}. Misformatted "
                                    "Signature.".format(request.__class__.__name__))
-        token, app_uuid, signature = settings.signature_info.match(
-            request.headers.get(settings.x_mws_authentication)).groups()
+        token, app_uuid, signature, mws_time = mws_attr(request)
         if not token == settings.mws_token:
             raise InauthenticError("Token verification failed for {}. "
                                    "Expected {}; token was {}".format(request.__class__.__name__,
                                                                       settings.mws_token, token))
         return True
 
-    def signature_valid(self, request):
+    @abc.abstractmethod
+    def signature_valid(self, request):  # pragma: no cover
         """
         This should be implemented by the child classes
         :param request:
         :return:
         """
-        raise NotImplemented
+        return
 
-    def mauth_service_response_error(self, response):
+    def log_mauth_service_response_error(self, request, response):
         """
         Upstream MAuth Service error
-        :param response:
+        :param request: Original Request Object
+        :type request: werkzeug.wrappers.BaseRequest
+        :param response: Returned Response Object
+        :type response: werkzeug.wrappers.BaseResponse
         """
-        message = "The mAuth service responded with {status}: {body}".format(status=response.status_code,
-                                                                             body=response.content)
+        token, app_uuid, signature, mws_time = mws_attr(request)
+        message = "MAuth Service: App UUID: {app_uuid}; URL: {url}; " \
+                  "MAuth service responded with {status}: {body}".format(
+            app_uuid=app_uuid,
+            url=request.path,
+            status=response.status_code,
+            body=response.data)
         self._logger.error(message)
         raise UnableToAuthenticateError(message, response)
+
+    def log_authentication_error(self, request, message=""):
+        """
+        Log an error with an authenticated request
+        :param request: request object
+        :type request: werkzeug.wrappers.BaseRequest
+        :param message: any message that is exposed
+        :type message: str
+        """
+        token, app_uuid, signature, mws_time = mws_attr(request)
+        if app_uuid == "":
+            app_uuid = "MISSING"
+        self._logger.error("MAuth Authentication Error: App UUID: {}; URL: {}; Error: {}".format(app_uuid,
+                                                                                                 request.path,
+                                                                                                 message))
+
+    def log_authentication_request(self, request):
+        """
+        Log an authenticated request
+        :param request: request object
+        :type request: werkzeug.wrappers.BaseRequest
+        """
+        token, app_uuid, signature, mws_time = mws_attr(request)
+        if app_uuid == "":
+            app_uuid = "MISSING"
+        self._logger.info("MAuth Request: App UUID: {}; URL: {}".format(app_uuid,
+                                                                        request.path))
 
 
 class RemoteAuthenticator(MAuthAuthenticator):
@@ -147,8 +203,7 @@ class RemoteAuthenticator(MAuthAuthenticator):
         :param request: Request instance
         :type request: werkzeug.wrappers.BaseRequest
         """
-        token, app_uuid, signature = settings.signature_info.match(
-            request.headers.get(settings.x_mws_authentication)).groups()
+        token, app_uuid, signature, mws_time = mws_attr(request)
         url = urljoin(self._mauth_base_url, "/mauth/{mauth_api_version}/" \
                                             "authentication_tickets.json".format(
             mauth_api_version=self._mauth_api_version))
@@ -156,7 +211,7 @@ class RemoteAuthenticator(MAuthAuthenticator):
                                      app_uuid=app_uuid,
                                      client_signature=signature,
                                      request_url=request.path,
-                                     request_time=request.headers.get(settings.x_mws_time),
+                                     request_time=mws_time,
                                      b64encoded_body=b64encode(request.data.encode('utf-8')).decode('utf-8')
                                      )
         response = requests.post(url,
@@ -174,9 +229,11 @@ class RemoteAuthenticator(MAuthAuthenticator):
         elif 200 <= response.status_code <= 299:
             return True
         else:
-            self.mauth_service_response_error(response)
+            # e.g. 500 error
+            self.log_mauth_service_response_error(request=request,
+                                                  response=response)
         # Strictly speaking, this is unreachable
-        return False
+        return False  # pragma: no cover
 
 
 class LocalAuthenticator(MAuthAuthenticator):
@@ -194,43 +251,20 @@ class LocalAuthenticator(MAuthAuthenticator):
         :param request: request object
         :type request: werkzeug.wrappers.BaseRequest
         """
-        # original_request_uri = request.full_path
-        # mws_time = request.headers.get(settings.x_mws_time)
-        # mws_signature = request.headers.get(settings.x_mws_authentication)
-        # craft an expected string-to-sign without doing any percent-encoding
-        # expected_no_reencoding = object.string_to_sign(time: object.x_mws_time, app_uuid: object.signature_app_uuid)
 
-        # do a simple percent reencoding variant of the path
-        # object.attributes_for_signing[:request_url] = CGI.escape(original_request_uri.to_s)
-        # expected_for_percent_reencoding = object.string_to_sign(time: object.x_mws_time,
-        # app_uuid: object.signature_app_uuid)
-
-        # do a moderately complex Euresource-style reencoding of the path
-        # object.attributes_for_signing[:request_url] = CGI.escape(original_request_uri.to_s)
-        # object.attributes_for_signing[:request_url].gsub!('%2F', '/') # ...and then 'simply'
-        #  decode the %2F's back into /'s, just like Euresource kind of does!
-        # expected_euresource_style_reencoding = object.string_to_sign(time: object.x_mws_time, app_uuid: object.signature_app_uuid)
-
-        # reset the object original request_uri, just in case we need it again
-        # object.attributes_for_signing[:request_url] = original_request_uri
-
-        # extract the header
-        token, app_uuid, signature = settings.signature_info.match(
-            request.headers.get(settings.x_mws_authentication)).groups()
+        token, app_uuid, signature, mws_time = mws_attr(request)
 
         expected = Signature.from_request(request=request)
         try:
-            rsakey = RSA.importKey(self.secure_token_cacher.get(app_uuid=app_uuid))
-            actual = Signature.from_signature(rsakey.decrypt(b64decode(signature)))
-            if actual != expected:
-                raise InauthenticError("Signature verification failed for {}".format(request.__class__.__name__))
-        except Exception as exc:
-            # TODO: work out what exceptions we will see here....
+            token = json.loads(self.secure_token_cacher.get(app_uuid=app_uuid))
+            rsakey = RSAPublicKey.load_pkcs1_openssl_pem(token.get('public_key_str'))
+            padded = rsakey.public_decrypt(signature)
+            signature_hash = rsakey.unpad_message(padded)
+        except ValueError as exc:
+            self.secure_token_cacher.flush(app_uuid)
+            # importKey raises
             raise InauthenticError("Public key decryption of signature "
-                                   "failed!\n{}: {}".format(request.__class__.__name__,
-                                                            exc.message))
-
-            # TODO: time-invariant comparison instead of #== ?
-            # unless expected_no_reencoding == actual || expected_euresource_style_reencoding == actual || expected_for_percent_reencoding == actual
-            #   raise InauthenticError, "Signature verification failed for #{object.class}"
-            # end
+                                   "failed!: {}".format(exc))
+        if not expected.matches(signature_hash):
+            raise InauthenticError("Signature verification failed for {}".format(request.__class__.__name__))
+        return True

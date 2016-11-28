@@ -1,9 +1,12 @@
 # -*- coding: utf-8 -*-
+import six
 
 __author__ = 'glow'
 
-from six.moves.urllib.parse import urljoin, urlparse
+from six.moves.urllib.parse import urlparse
 from flask_mauth import settings
+from hashlib import sha512
+
 
 class Signature(object):
     """
@@ -52,6 +55,26 @@ class Signature(object):
                     app_uuid,
                     seconds_since_epoch)
 
+    def matches(self, other):
+        """
+        Confirms that the hash of this matches the passed hash
+        :param other: hexdigest hash
+        """
+        if isinstance(other, (six.binary_type,)):
+            # Python 3 returns a bytes, Python2 returns a string
+            return six.b(self.hash) == other
+        return self.hash == other
+
+    @property
+    def hash(self):
+        """
+        Generate the SHA512 Hash of this object for comparison
+        :return:
+        """
+        return sha512('\n'.join([self.verb, self.url_path,
+                                 self.body, self.app_uuid,
+                                 self.seconds_since_epoch]).encode('US-ASCII')).hexdigest()
+
     def __eq__(self, other):
         """
         Compare Signature Objects
@@ -61,13 +84,4 @@ class Signature(object):
         :rtype: bool
         """
         assert isinstance(other, (Signature,))
-        if self.app_uuid.lower() == other.app_uuid.lower():
-            if urlparse(self.url_path) == urlparse(other.url_path):
-                if self.verb == other.verb:
-                    if self.seconds_since_epoch == other.seconds_since_epoch:
-                        return True
-        return False
-
-    def __hash__(self):
-        return '|'.join([self.app_uuid, self.url_path, self.seconds_since_epoch, self.verb, self.body])
-
+        return self.matches(other.hash)
