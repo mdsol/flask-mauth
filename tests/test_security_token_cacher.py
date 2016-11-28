@@ -1,30 +1,17 @@
 # -*- coding: utf-8 -*-
-from time import sleep
 
 __author__ = 'glow'
 
-from unittest import TestCase
 import datetime
-import os
+import uuid
+from time import sleep
+from unittest import TestCase
+
 from mock import mock
 
+from flask_mauth.cacher.security_token_cacher import SecurityTokenCacher
 from flask_mauth.exceptions import InauthenticError, UnableToAuthenticateError
-from flask_mauth.security_token_cacher import SecurityTokenCacher
-
-
-def load_key(keytype='pub'):
-    """
-    Load the sample keys
-    :param keytype: type of key to load
-    :return: key content
-    :rtype: str
-    """
-    assert keytype in ('pub', 'priv')
-    content = ""
-    with open(os.path.join(os.path.dirname(__file__),
-                             'yourname_mauth.%s.key' % keytype), 'r') as key:
-        content = key.read()
-    return content
+from tests.common import load_key
 
 
 class TestSecurityTokenCacher(TestCase):
@@ -39,7 +26,7 @@ class TestSecurityTokenCacher(TestCase):
                       public_key_str=self.public_key,
                       created_at=datetime.datetime.now())
         cacher = SecurityTokenCacher()
-        with mock.patch("flask_mauth.security_token_cacher.requests.get") as req:
+        with mock.patch("flask_mauth.cacher.security_token_cacher.requests.get") as req:
             req.return_value = mock.Mock(status_code=200)
             req.json.return_value = ticket
             # this will fetch
@@ -48,6 +35,33 @@ class TestSecurityTokenCacher(TestCase):
             token = cacher.get(self.app_uuid)
         self.assertEqual(1, req.call_count)
 
+    def test_flush(self):
+        """ We can manually flush an element from the cache """
+        ticket = dict(app_name="Some App",
+                      app_uuid=self.app_uuid,
+                      public_key_str=self.public_key,
+                      created_at=datetime.datetime.now())
+        cacher = SecurityTokenCacher()
+        with mock.patch("flask_mauth.cacher.security_token_cacher.requests.get") as req:
+            req.return_value = mock.Mock(status_code=200)
+            req.json.return_value = ticket
+            # this will fetch
+            token = cacher.get(self.app_uuid)
+            cacher.flush(self.app_uuid)
+            # this will fetch
+            token = cacher.get(self.app_uuid)
+        # because we flush the element, we need to get calls
+        self.assertEqual(2, req.call_count)
+
+    def test_flush_missing_app(self):
+        """ Trying to flush something that doesn't exist, no problem """
+        ticket = dict(app_name="Some App",
+                      app_uuid=self.app_uuid,
+                      public_key_str=self.public_key,
+                      created_at=datetime.datetime.now())
+        cacher = SecurityTokenCacher()
+        self.assertIsNone(cacher.flush(str(uuid.uuid4())))
+
     def test_request_for_expired_app_fetches(self):
         """ An expired cache token will be refetched """
         ticket = dict(app_name="Some App",
@@ -55,7 +69,7 @@ class TestSecurityTokenCacher(TestCase):
                       public_key_str=self.public_key,
                       created_at=datetime.datetime.now())
         cacher = SecurityTokenCacher(cache_life=0.001)
-        with mock.patch("flask_mauth.security_token_cacher.requests.get") as req:
+        with mock.patch("flask_mauth.cacher.security_token_cacher.requests.get") as req:
             req.return_value = mock.Mock(status_code=200)
             req.json.return_value = ticket
             # this will fetch
@@ -72,7 +86,7 @@ class TestSecurityTokenCacher(TestCase):
                       public_key_str=self.public_key,
                       created_at=datetime.datetime.now())
         cacher = SecurityTokenCacher()
-        with mock.patch("flask_mauth.security_token_cacher.requests.get") as req:
+        with mock.patch("flask_mauth.cacher.security_token_cacher.requests.get") as req:
             req.return_value = mock.Mock(status_code=404)
             # this will fetch
             with self.assertRaises(InauthenticError) as exc:
@@ -85,7 +99,7 @@ class TestSecurityTokenCacher(TestCase):
     def test_mauth_error_raises(self):
         """ A MAuth Service error raises an UnableToAuthenticateError """
         cacher = SecurityTokenCacher()
-        with mock.patch("flask_mauth.security_token_cacher.requests.get") as req:
+        with mock.patch("flask_mauth.cacher.security_token_cacher.requests.get") as req:
             req.return_value = mock.Mock(status_code=500, content="GULP")
             # this will fetch
             with self.assertRaises(UnableToAuthenticateError) as exc:
