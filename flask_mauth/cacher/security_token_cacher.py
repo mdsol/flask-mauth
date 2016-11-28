@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-import re
 
 __author__ = 'glow'
 
@@ -22,6 +21,14 @@ class SecurityTokenCacher(object):
                                           cache_life)
         self.mauth_base_url = mauth_base_url
         self.mauth_api_version = mauth_api_version
+
+    def flush(self, app_uuid):
+        """
+        Expire a token
+        :param app_uuid: APP UUID to expire
+        """
+        if app_uuid in self._cache:
+            del self._cache[app_uuid]
 
     def get(self, app_uuid):
         if app_uuid not in self._cache:
