@@ -3,3 +3,4 @@ branch = true
 omit =
     */venv/*
     */tests/*
+    */.tox/*
