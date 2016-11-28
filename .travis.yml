@@ -5,6 +5,10 @@ python:
   - "3.6-dev"
   - "pypy"
 # Install script
-install: "python setup.py install"
+install:
+  - pip install .
+  - pip install -r tests/requirements.txt
 # command to run tests
-script: "python setup.py test"
+script:
+  - python setup.py test
+
