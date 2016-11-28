@@ -4,8 +4,7 @@ python:
   - "3.5"
   - "3.6-dev"
   - "pypy"
-install:
-  python setup.py install
+# Install scrip
+install: "python setup.py install"
 # command to run tests
-script:
-  python setup.py test
+script: "python setup.py test"

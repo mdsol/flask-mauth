@@ -6,15 +6,6 @@ from os import path
 
 from setuptools import find_packages, setup
 
-requirements = [
-    'Flask>=0.8',
-    'six>=1.3.0',
-    'pytz',
-    'rsa',
-    'cachetools',
-    'requests-mauth',
-]
-
 version_file = path.join(
     path.dirname(__file__),
     'flask_mauth',
@@ -51,7 +42,6 @@ setup(
     include_package_data=True,
     platforms='any',
     test_suite='tests',
-    install_requires=requirements,
     tests_require=['mock'],
     extras_require={
         'docs': 'sphinx',
