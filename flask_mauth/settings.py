@@ -4,9 +4,12 @@ import re
 
 
 # DEFAULT FLAGS
-x_mws_time = 'X_MWS_TIME'
-x_mws_authentication = 'X_MWS_AUTHENTICATION'
 mws_token = "MWS"
+
+x_mws_time = 'X-MWS-Time'
+x_mws_authentication = 'X-MWS-Authentication'
+x_mcc_impersonate = "MCC-Impersonate"
+
 
 # Parser for Signature
 signature_info = re.compile(r'\A([^ ]+) *([^:]+):([^:]+)\Z')
