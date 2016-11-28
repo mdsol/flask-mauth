@@ -13,7 +13,6 @@ requirements = [
     'rsa',
     'cachetools',
     'requests-mauth',
-    'pycrypto'
 ]
 
 version_file = path.join(
@@ -41,12 +40,11 @@ setup(
     classifiers=[
         'Framework :: Flask',
         'Programming Language :: Python :: 2',
-        'Programming Language :: Python :: 2.6',
         'Programming Language :: Python :: 2.7',
         'Programming Language :: Python :: 3',
-        'Programming Language :: Python :: 3.3',
         'Programming Language :: Python :: 3.4',
         'Programming Language :: Python :: 3.5',
+        'Programming Language :: Python :: 3.6',
         'License :: OSI Approved :: MIT License',
     ],
     zip_safe=False,
@@ -54,8 +52,7 @@ setup(
     platforms='any',
     test_suite='tests',
     install_requires=requirements,
-    tests_require=['mock>=0.8'],
-    # Install these with "pip install -e '.[paging]'" or '.[docs]'
+    tests_require=['mock'],
     extras_require={
         'docs': 'sphinx',
     }
