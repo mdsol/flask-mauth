@@ -10,7 +10,7 @@ class InauthenticError(Exception):
 
 
 class UnableToAuthenticateError(Exception):
-    # the response from the MAuth service encountered when attempting to retrieve authentication
+    # the response from the MAuth service encountered when attempting to retrieve mauth
     def __init__(self, message, response=None):
         super(UnableToAuthenticateError, self).__init__(message)
         self.response = response
