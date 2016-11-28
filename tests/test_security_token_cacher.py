@@ -7,7 +7,7 @@ import uuid
 from time import sleep
 from unittest import TestCase
 
-from mock import mock
+import mock
 
 from flask_mauth.cacher.security_token_cacher import SecurityTokenCacher
 from flask_mauth.exceptions import InauthenticError, UnableToAuthenticateError

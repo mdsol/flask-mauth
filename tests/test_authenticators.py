@@ -8,7 +8,8 @@ import time
 from unittest import TestCase
 
 import requests_mauth
-from mock import mock, patch
+import mock
+from mock import patch
 from six import assertRegex
 
 from flask_mauth.mauth.authenticators import LocalAuthenticator, MAuthAuthenticator, RemoteAuthenticator, mws_attr
