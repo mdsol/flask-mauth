@@ -3,7 +3,7 @@
 
 import re
 from os import path
-import unittest
+
 
 from setuptools import find_packages, setup
 
@@ -20,11 +20,6 @@ with open(version_file, 'r') as fp:
     )
     version = m.groups(1)[0]
 
-def flask_mauth_test_suite():
-    # workaround for py2.7 and pypy
-    test_loader = unittest.TestLoader()
-    test_suite = test_loader.discover('tests', pattern='test_*.py')
-    return test_suite
 
 setup(
     name='Flask-MAuth',
@@ -48,8 +43,7 @@ setup(
     zip_safe=False,
     include_package_data=True,
     platforms='any',
-    test_suite='setup.flask_mauth_test_suite',
-    tests_require=[],
+    test_suite='tests',
     install_requires=["Flask",
                       "six",
                       "rsa",
