@@ -1,12 +1,11 @@
 # -*- coding: utf-8 -*-
-from tests.common import get_hash
-
-__author__ = 'glow'
 
 from unittest import TestCase
 import mock
 from flask_mauth.mauth.signature import Signature
 from flask_mauth import settings
+from tests.common import get_hash
+
 
 class TestSignature(TestCase):
     def setUp(self):

@@ -1,9 +1,7 @@
 # -*- coding: utf-8 -*-
-from unittest import mock
-
-__author__ = 'glow'
 
 import unittest
+import mock
 from flask_mauth.auth import MAuthAuthenticator, requires_authentication
 from flask import Flask
 from tests.common import load_key

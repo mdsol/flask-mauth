@@ -1,7 +1,5 @@
 # -*- coding: utf-8 -*-
 
-__author__ = 'glow'
-
 import datetime
 import json
 import time
@@ -12,7 +10,8 @@ import mock
 from mock import patch
 from six import assertRegex
 
-from flask_mauth.mauth.authenticators import LocalAuthenticator, AbstractMAuthAuthenticator, RemoteAuthenticator, mws_attr
+from flask_mauth.mauth.authenticators import LocalAuthenticator, AbstractMAuthAuthenticator, RemoteAuthenticator, \
+    mws_attr
 from flask_mauth import settings
 from flask_mauth.exceptions import InauthenticError, UnableToAuthenticateError
 from tests.common import load_key

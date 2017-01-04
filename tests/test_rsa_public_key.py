@@ -1,7 +1,5 @@
 # -*- coding: utf-8 -*-
 
-__author__ = 'glow'
-
 import unittest
 from hashlib import sha512
 
