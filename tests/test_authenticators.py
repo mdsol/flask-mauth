@@ -12,7 +12,7 @@ import mock
 from mock import patch
 from six import assertRegex
 
-from flask_mauth.mauth.authenticators import LocalAuthenticator, MAuthAuthenticator, RemoteAuthenticator, mws_attr
+from flask_mauth.mauth.authenticators import LocalAuthenticator, AbstractMAuthAuthenticator, RemoteAuthenticator, mws_attr
 from flask_mauth import settings
 from flask_mauth.exceptions import InauthenticError, UnableToAuthenticateError
 from tests.common import load_key
@@ -81,7 +81,7 @@ class _TestAuthenticator(object):
 
     def test_time_valid_expired_header(self):
         """With an empty header, we get an exception"""
-        now = int(time.time()) - (MAuthAuthenticator.ALLOWED_DRIFT_SECONDS * 100 + 1)
+        now = int(time.time()) - (AbstractMAuthAuthenticator.ALLOWED_DRIFT_SECONDS * 100 + 1)
         request = mock.Mock(headers={settings.x_mws_time: str(now)})
         with self.assertRaises(InauthenticError) as exc:
             self.authenticator.time_valid(request=request)
@@ -89,7 +89,7 @@ class _TestAuthenticator(object):
                     str(exc.exception),
                     r"Time verification failed for Mock. %s "
                     "not within %ss of [0-9\-]{10} [0-9\:]{7}" % (datetime.datetime.fromtimestamp(now),
-                                                                  MAuthAuthenticator.ALLOWED_DRIFT_SECONDS),
+                                                                  AbstractMAuthAuthenticator.ALLOWED_DRIFT_SECONDS),
                     )
 
     def test_token_valid_happy_path(self):
@@ -422,6 +422,11 @@ class TestRemoteAuthenticator(_TestAuthenticator, TestCase):
         authentic = self.authenticator.authenticate(request)
         self.assertFalse(authentic)
 
+    def test_authentication_type(self):
+        """We self-describe"""
+        self.assertEqual('REMOTE', self.authenticator.authenticator_type)
+
+
 
 class TestLocalAuthenticator(_TestAuthenticator, TestCase):
     def setUp(self):
@@ -478,6 +483,14 @@ class TestLocalAuthenticator(_TestAuthenticator, TestCase):
 
             result = authenticator.signature_valid(request)
         self.assertTrue(result)
+
+    def test_authentication_type(self):
+        """We self-describe"""
+        authenticator = LocalAuthenticator(mauth_auth=mock.Mock(),
+                                           logger=mock.Mock(),
+                                           mauth_api_version='v2',
+                                           mauth_base_url='https://mauth-sandbox.imedidata.net')
+        self.assertEqual('LOCAL', authenticator.authenticator_type)
 
     def test_does_not_authenticate_a_false_message(self):
         """Given an authentic message, we authenticate"""
