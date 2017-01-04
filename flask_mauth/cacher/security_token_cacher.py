@@ -2,11 +2,12 @@
 
 __author__ = 'glow'
 
-import requests
 import cachetools
+import requests
+from six.moves.urllib.parse import urljoin
+
 from flask_mauth.exceptions import InauthenticError, UnableToAuthenticateError
 from flask_mauth.settings import uuid_pattern
-from six.moves.urllib.parse import urljoin
 
 
 class SecurityTokenCacher(object):
