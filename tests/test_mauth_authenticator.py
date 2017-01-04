@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from unittest import mock
 
 __author__ = 'glow'
 
@@ -127,3 +128,28 @@ class MAuthAthenticatorTestCase(unittest.TestCase):
         rv = client.get("/lemon")
         self.assertEqual(200, rv.status_code)
         self.assertEqual(b'Ping', rv.data)
+
+    def test_app_configuration_with_valid_call(self):
+        """If the call is authenticated then the call will get passed"""
+        key_text = load_key('priv')
+        self.app.config['MAUTH_APP_UUID'] = '671785CD-15CE-458A-9779-8132C8F60F04'
+        self.app.config['MAUTH_KEY_DATA'] = key_text
+        self.app.config['MAUTH_BASE_URL'] = "https://mauth-sandbox.imedidata.net"
+        self.app.config['MAUTH_VERSION'] = "v2"
+        self.app.config['MAUTH_MODE'] = "local"
+        @self.app.route("/", methods=['GET'])
+        @requires_authentication
+        def test_url_closed():
+            return "Ping"
+
+        client = self.app.test_client()
+
+        with mock.patch("flask_mauth.auth.LocalAuthenticator") as local_auth:
+            m_auth = local_auth.return_value
+            m_auth.authenticate.return_value = True
+            authenticator = MAuthAuthenticator()
+            authenticator.init_app(self.app)
+            # protected URL
+            rv = client.get("/")
+            self.assertEqual(200, rv.status_code)
+            self.assertEqual(b'Ping', rv.data)
