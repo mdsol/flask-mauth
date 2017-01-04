@@ -3,10 +3,12 @@ python:
   - "2.7"
   - "3.5"
   - "3.6"
+
 # Install script
 install:
   - python setup.py install
-# command to run tests
+  - pip install -r tests/requirements.txt
+
 script:
   - python setup.py test
 
