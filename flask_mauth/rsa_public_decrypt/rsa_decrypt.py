@@ -2,9 +2,10 @@
 
 __author__ = 'glow'
 
-from rsa import PublicKey, common, transform, core
-import six
 import base64
+
+import six
+from rsa import PublicKey, common, core, transform
 
 
 class RSAPublicKey(PublicKey):

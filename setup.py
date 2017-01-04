@@ -1,9 +1,7 @@
 # -*- coding: utf-8 -*-
-# !/usr/bin/env python
 
 import re
 from os import path
-
 
 from setuptools import find_packages, setup
 
@@ -35,7 +33,6 @@ setup(
         'Programming Language :: Python :: 2',
         'Programming Language :: Python :: 2.7',
         'Programming Language :: Python :: 3',
-        'Programming Language :: Python :: 3.4',
         'Programming Language :: Python :: 3.5',
         'Programming Language :: Python :: 3.6',
         'License :: OSI Approved :: MIT License',
@@ -43,6 +40,7 @@ setup(
     zip_safe=False,
     include_package_data=True,
     platforms='any',
+    tests_require=['mock'],
     test_suite='tests',
     install_requires=["Flask",
                       "six",
