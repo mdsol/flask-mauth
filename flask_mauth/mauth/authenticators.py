@@ -31,7 +31,7 @@ def mws_attr(request):
     return token, app_uuid, signature, mws_time
 
 
-class MAuthAuthenticator(object):
+class AbstractMAuthAuthenticator(object):
     __metaclass__ = abc.ABCMeta
 
     ALLOWED_DRIFT_SECONDS = 300
@@ -189,13 +189,18 @@ class MAuthAuthenticator(object):
             app_uuid = "MISSING"
         self._logger.info("MAuth Request: App UUID: {}; URL: {}".format(app_uuid,
                                                                         request.path))
+    @property
+    def authenticator_type(self):
+        return self.AUTHENTICATION_TYPE
 
 
-class RemoteAuthenticator(MAuthAuthenticator):
+class RemoteAuthenticatorAbstract(AbstractMAuthAuthenticator):
+    AUTHENTICATION_TYPE = "REMOTE"
+
     def __init__(self, mauth_auth, logger, mauth_base_url, mauth_api_version):
-        super(RemoteAuthenticator, self).__init__(mauth_auth=mauth_auth, logger=logger,
-                                                  mauth_base_url=mauth_base_url,
-                                                  mauth_api_version=mauth_api_version)
+        super(RemoteAuthenticatorAbstract, self).__init__(mauth_auth=mauth_auth, logger=logger,
+                                                          mauth_base_url=mauth_base_url,
+                                                          mauth_api_version=mauth_api_version)
 
     def signature_valid(self, request):
         """
@@ -236,11 +241,13 @@ class RemoteAuthenticator(MAuthAuthenticator):
         return False  # pragma: no cover
 
 
-class LocalAuthenticator(MAuthAuthenticator):
+class LocalAuthenticatorAbstract(AbstractMAuthAuthenticator):
+    AUTHENTICATION_TYPE = "LOCAL"
+
     def __init__(self, mauth_auth, logger, mauth_base_url, mauth_api_version):
-        super(LocalAuthenticator, self).__init__(mauth_auth=mauth_auth, logger=logger,
-                                                 mauth_base_url=mauth_base_url,
-                                                 mauth_api_version=mauth_api_version)
+        super(LocalAuthenticatorAbstract, self).__init__(mauth_auth=mauth_auth, logger=logger,
+                                                         mauth_base_url=mauth_base_url,
+                                                         mauth_api_version=mauth_api_version)
         self.secure_token_cacher = SecurityTokenCacher(mauth_auth=mauth_auth,
                                                        mauth_api_version=mauth_api_version,
                                                        mauth_base_url=mauth_base_url)
