@@ -194,13 +194,13 @@ class AbstractMAuthAuthenticator(object):
         return self.AUTHENTICATION_TYPE
 
 
-class RemoteAuthenticatorAbstract(AbstractMAuthAuthenticator):
+class RemoteAuthenticator(AbstractMAuthAuthenticator):
     AUTHENTICATION_TYPE = "REMOTE"
 
     def __init__(self, mauth_auth, logger, mauth_base_url, mauth_api_version):
-        super(RemoteAuthenticatorAbstract, self).__init__(mauth_auth=mauth_auth, logger=logger,
-                                                          mauth_base_url=mauth_base_url,
-                                                          mauth_api_version=mauth_api_version)
+        super(RemoteAuthenticator, self).__init__(mauth_auth=mauth_auth, logger=logger,
+                                                  mauth_base_url=mauth_base_url,
+                                                  mauth_api_version=mauth_api_version)
 
     def signature_valid(self, request):
         """
@@ -241,13 +241,13 @@ class RemoteAuthenticatorAbstract(AbstractMAuthAuthenticator):
         return False  # pragma: no cover
 
 
-class LocalAuthenticatorAbstract(AbstractMAuthAuthenticator):
+class LocalAuthenticator(AbstractMAuthAuthenticator):
     AUTHENTICATION_TYPE = "LOCAL"
 
     def __init__(self, mauth_auth, logger, mauth_base_url, mauth_api_version):
-        super(LocalAuthenticatorAbstract, self).__init__(mauth_auth=mauth_auth, logger=logger,
-                                                         mauth_base_url=mauth_base_url,
-                                                         mauth_api_version=mauth_api_version)
+        super(LocalAuthenticator, self).__init__(mauth_auth=mauth_auth, logger=logger,
+                                                 mauth_base_url=mauth_base_url,
+                                                 mauth_api_version=mauth_api_version)
         self.secure_token_cacher = SecurityTokenCacher(mauth_auth=mauth_auth,
                                                        mauth_api_version=mauth_api_version,
                                                        mauth_base_url=mauth_base_url)

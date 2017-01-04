@@ -3,5 +3,5 @@
 __author__ = 'glow'
 
 from .signature import Signature
-from .authenticators import RemoteAuthenticatorAbstract, LocalAuthenticatorAbstract
+from .authenticators import RemoteAuthenticator, LocalAuthenticator
 
