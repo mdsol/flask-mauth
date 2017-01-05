@@ -1,9 +1,8 @@
 # -*- coding: utf-8 -*-
 
-__author__ = 'glow'
-
 import cachetools
 import requests
+import requests_mauth
 from six.moves.urllib.parse import urljoin
 
 from flask_mauth.exceptions import InauthenticError, UnableToAuthenticateError
@@ -26,12 +25,18 @@ class SecurityTokenCacher(object):
     def flush(self, app_uuid):
         """
         Expire a token
+
         :param app_uuid: APP UUID to expire
         """
         if app_uuid in self._cache:
             del self._cache[app_uuid]
 
     def get(self, app_uuid):
+        """
+        Get a credential set from the cache
+
+        :param app_uuid: APP_UUID to retrieve
+        """
         if app_uuid not in self._cache:
             # pull the remote credentials, if this fails it raises an InauthenticError
             self._remote_get(app_uuid)
@@ -39,6 +44,11 @@ class SecurityTokenCacher(object):
 
     def _remote_get(self, app_uuid):
         # type: (str) -> None
+        """
+        Attempt to retrieve a credential set from the remote store
+
+        :param app_uuid: APP_UUID to retrieve
+        """
         if not uuid_pattern.match(app_uuid):
             raise UnableToAuthenticateError("APP UUID format is not conformant")
         url = urljoin(self.mauth_base_url, "/mauth/{mauth_api_version}/security_tokens" \

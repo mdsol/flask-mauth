@@ -18,9 +18,11 @@ from flask_mauth.rsa_public_decrypt import RSAPublicKey
 def mws_attr(request):
     """
     Extract the MWS Headers from a Request
-    :param request: A request object
-    :type request:
-    :return:
+
+    :param request: Request object
+    :type request: werkzeug.wrappers.BaseRequest
+    :return: Token, APP_UUID,  Time since Epoch
+    :rtype: str, str, str
     """
     token, app_uuid, signature, mws_time = "", "", "", ""
     if settings.x_mws_authentication in request.headers:
@@ -33,12 +35,14 @@ def mws_attr(request):
 
 class AbstractMAuthAuthenticator(object):
     __metaclass__ = abc.ABCMeta
+    """
+    Abstract Base Class for the Local and Remote Authentication classes
+    """
 
     ALLOWED_DRIFT_SECONDS = 300
 
     def __init__(self, mauth_auth, logger, mauth_base_url, mauth_api_version):
         """
-        MAuthAuthenticator for authenticating requests (Base class)
         :param mauth_auth: MAuth object
         :type mauth_auth: requests_mauth.client.MAuth
         :param logger: Logger for messages (TBD)
@@ -55,7 +59,9 @@ class AbstractMAuthAuthenticator(object):
     def authenticate(self, request):
         """
         Authenticate the request, by checking all the sub-category of issues
-        :param request: request like object
+
+        :param request: Request object
+        :type request: werkzeug.wrappers.BaseRequest
         """
         if self.authentication_present(request) and self.time_valid(request) and \
                 self.token_valid(request) and self.signature_valid(request):
@@ -65,8 +71,11 @@ class AbstractMAuthAuthenticator(object):
     def is_authentic(self, request):
         """
         Overall Wrapper for mauth
-        :param request:
-        :return:
+
+        :param request: Request object
+        :type request: werkzeug.wrappers.BaseRequest
+        :return: Is the request authentic?
+        :rtype: bool
         """
         self.log_authentication_request(request)
         authentic = False
@@ -82,7 +91,8 @@ class AbstractMAuthAuthenticator(object):
         """
         Is the mauth header present (assuming request has a headers attribute) that
         can be treated like a dict
-        :param request: Request like object
+
+        :param request: Request object
         :type request: werkzeug.wrappers.BaseRequest
         :rtype: bool
         :return: success
@@ -95,6 +105,7 @@ class AbstractMAuthAuthenticator(object):
     def time_valid(self, request):
         """
         Is the time of the request within the allowed drift?
+
         :param request: Request like object
         :type request: werkzeug.wrappers.BaseRequest
         :rtype: bool
@@ -121,6 +132,7 @@ class AbstractMAuthAuthenticator(object):
     def token_valid(self, request):
         """
         Is the message signed correctly?
+
         :param request: Request object
         :type request: werkzeug.wrappers.BaseRequest
         :rtype: bool
@@ -140,14 +152,16 @@ class AbstractMAuthAuthenticator(object):
     def signature_valid(self, request):  # pragma: no cover
         """
         This should be implemented by the child classes
-        :param request:
-        :return:
+
+        :param request: the Request Object
+        :type request: werkzeug.wrappers.BaseRequest
         """
         return
 
     def log_mauth_service_response_error(self, request, response):
         """
         Upstream MAuth Service error
+
         :param request: Original Request Object
         :type request: werkzeug.wrappers.BaseRequest
         :param response: Returned Response Object
@@ -166,6 +180,7 @@ class AbstractMAuthAuthenticator(object):
     def log_authentication_error(self, request, message=""):
         """
         Log an error with an authenticated request
+
         :param request: request object
         :type request: werkzeug.wrappers.BaseRequest
         :param message: any message that is exposed
@@ -181,6 +196,7 @@ class AbstractMAuthAuthenticator(object):
     def log_authentication_request(self, request):
         """
         Log an authenticated request
+
         :param request: request object
         :type request: werkzeug.wrappers.BaseRequest
         """
@@ -191,13 +207,26 @@ class AbstractMAuthAuthenticator(object):
                                                                         request.path))
     @property
     def authenticator_type(self):
+        """
+        Return the Authenticator Type
+        """
         return self.AUTHENTICATION_TYPE
 
 
 class RemoteAuthenticator(AbstractMAuthAuthenticator):
+    """
+    Remote Authentication object, passes through the authentication to the upstream MAuth Server
+    """
     AUTHENTICATION_TYPE = "REMOTE"
 
     def __init__(self, mauth_auth, logger, mauth_base_url, mauth_api_version):
+        """
+        :param mauth_auth: Configured MAuth Client
+        :type mauth_auth: requests_mauth.client.MAuth
+        :param logger: configured Flask Logger
+        :param str mauth_base_url: The Base URL for the mauth server
+        :param str mauth_api_version: API Version for the mauth server
+        """
         super(RemoteAuthenticator, self).__init__(mauth_auth=mauth_auth, logger=logger,
                                                   mauth_base_url=mauth_base_url,
                                                   mauth_api_version=mauth_api_version)
@@ -205,6 +234,7 @@ class RemoteAuthenticator(AbstractMAuthAuthenticator):
     def signature_valid(self, request):
         """
         Is the signature valid?
+
         :param request: Request instance
         :type request: werkzeug.wrappers.BaseRequest
         """
@@ -242,9 +272,20 @@ class RemoteAuthenticator(AbstractMAuthAuthenticator):
 
 
 class LocalAuthenticator(AbstractMAuthAuthenticator):
+    """
+    Local Authentication object, authenticates the request locally, retrieving the necessary credentials from the
+    upstream MAuth Server
+    """
     AUTHENTICATION_TYPE = "LOCAL"
 
     def __init__(self, mauth_auth, logger, mauth_base_url, mauth_api_version):
+        """
+        :param mauth_auth: Configured MAuth Client
+        :type mauth_auth: requests_mauth.client.MAuth
+        :param logger: configured Flask Logger
+        :param str mauth_base_url: The Base URL for the mauth server
+        :param str mauth_api_version: API Version for the mauth server
+        """
         super(LocalAuthenticator, self).__init__(mauth_auth=mauth_auth, logger=logger,
                                                  mauth_base_url=mauth_base_url,
                                                  mauth_api_version=mauth_api_version)
@@ -255,6 +296,7 @@ class LocalAuthenticator(AbstractMAuthAuthenticator):
     def signature_valid(self, request):
         """
         Is the signature valid?
+
         :param request: request object
         :type request: werkzeug.wrappers.BaseRequest
         """

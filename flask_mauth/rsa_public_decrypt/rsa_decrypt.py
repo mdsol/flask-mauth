@@ -13,8 +13,10 @@ class RSAPublicKey(PublicKey):
     def public_decrypt(self, message):
         """
         Decrypt a String encrypted with a private key, returns the hash
-        :param message: encrypted message
-        :return:
+
+        :param str message: encrypted message
+        :return: message hash
+        :rtype: str
         """
         # base64 decode
         decoded = base64.b64decode(six.b(message))
@@ -30,6 +32,7 @@ class RSAPublicKey(PublicKey):
     def unpad_message(self, padded):
         """
         Removes the padding from the string
+
         :param padded: padded string
         :rtype: str
         """

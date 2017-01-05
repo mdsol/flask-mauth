@@ -11,6 +11,9 @@ logger = logging.getLogger("flask_mauth")
 
 
 class MAuthAuthenticator(object):
+    """
+    The MAuth Authenticator instance
+    """
     state_key = 'flask_mauth.client'
 
     def __init__(self, app=None):
@@ -24,6 +27,7 @@ class MAuthAuthenticator(object):
     def app_uuid(self):
         """
         Get the MAuth APP UUID
+
         :return: MAuth APP UUID
         :rtype: str
         """
@@ -33,6 +37,7 @@ class MAuthAuthenticator(object):
     def mauth_key(self):
         """
         Get the MAuth Key Text
+
         :return: MAuth Key Text
         :rtype: str
         """
@@ -42,6 +47,7 @@ class MAuthAuthenticator(object):
     def mauth_base_url(self):
         """
         Get the MAuth Base URL
+
         :return: MAuth Base URL
         :rtype: str
         """
@@ -51,6 +57,7 @@ class MAuthAuthenticator(object):
     def mauth_version(self):
         """
         Get the MAuth Version (defaults to v2)
+
         :return: MAuth Version
         :rtype: str
         """
@@ -60,6 +67,7 @@ class MAuthAuthenticator(object):
     def mauth_mode(self):
         """
         Get the MAuth Authentication Mode
+
         :return: Defined MAuth Authentication Mode (defaults to local)
         :rtype: str
         """
@@ -90,14 +98,21 @@ class MAuthAuthenticator(object):
         return authenticator
 
     def authenticate(self, request):
+        """
+        Authenticates a request
+
+        :param request: Request object
+        :type request: werkzeug.wrappers.BaseRequest
+        :return: Is the request authenticated?
+        :rtype: bool
+        """
         return self._authenticator.is_authentic(request)
 
     def init_app(self, app):
-        """Init app with Flask instance.
+        """
+        Init app with Flask instance.
 
-        You can also pass the instance of Flask later::
-            mauth = MAuthAuthenticator()
-            mauth.init_app(app)
+        :param app: Flask Application instance
         """
         self._app = app
         app.authenticator = self
