@@ -8,10 +8,10 @@ from base64 import b64encode
 import requests
 from six.moves.urllib.parse import urljoin
 
-from flask_mauth.mauth.signature import Signature
-from flask_mauth.cacher import SecurityTokenCacher
 from flask_mauth import settings
+from flask_mauth.cacher import SecurityTokenCacher
 from flask_mauth.exceptions import InauthenticError, UnableToAuthenticateError
+from flask_mauth.mauth.signature import Signature
 from flask_mauth.rsa_public_decrypt import RSAPublicKey
 
 
@@ -74,8 +74,8 @@ class AbstractMAuthAuthenticator(object):
 
         :param request: Request object
         :type request: werkzeug.wrappers.BaseRequest
-        :return: Is the request authentic?
-        :rtype: bool
+        :return: Is the request authentic?, Status Code, Message
+        :rtype: (bool, int, str)
         """
         self.log_authentication_request(request)
         authentic = False
