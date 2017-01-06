@@ -1,10 +1,13 @@
 # -*- coding: utf-8 -*-
-
+import json
 import unittest
+
 import mock
-from flask_mauth.auth import MAuthAuthenticator, requires_authentication
 from flask import Flask
+
+from flask_mauth.auth import MAuthAuthenticator, requires_authentication
 from tests.common import load_key
+
 
 class MAuthAthenticatorTestCase(unittest.TestCase):
 
@@ -98,8 +101,8 @@ class MAuthAthenticatorTestCase(unittest.TestCase):
             self.fail("Shouldn't raise an exception")
         self.assertEqual('remote', authenticator.mauth_mode)
 
-    def test_app_configuration_and_call(self):
-        """With everything present, initialisation of app is ok"""
+    def test_app_configuration_and_call_protected_url(self):
+        """A protected route will raise if the call is inauthentic"""
         key_text = load_key('priv')
         self.app.config['MAUTH_APP_UUID'] = '671785CD-15CE-458A-9779-8132C8F60F04'
         self.app.config['MAUTH_KEY_DATA'] = key_text
@@ -114,14 +117,32 @@ class MAuthAthenticatorTestCase(unittest.TestCase):
         def test_url_closed():
             return "Ping"
 
+        client = self.app.test_client()
+
+        # protected URL
+        rv = client.get("/")
+        self.assertEqual(401, rv.status_code)
+        self.assertEqual(dict(errors=dict(mauth=["Authentication Failed. No mAuth signature present; "
+                                                 "X-MWS-Authentication header is blank."])),
+                         json.loads(rv.data.decode('utf-8')))
+
+    def test_app_configuration_and_call_open_url(self):
+        """An open route will pass"""
+        key_text = load_key('priv')
+        self.app.config['MAUTH_APP_UUID'] = '671785CD-15CE-458A-9779-8132C8F60F04'
+        self.app.config['MAUTH_KEY_DATA'] = key_text
+        self.app.config['MAUTH_BASE_URL'] = "https://mauth-sandbox.imedidata.net"
+        self.app.config['MAUTH_VERSION'] = "v2"
+        self.app.config['MAUTH_MODE'] = "local"
+        authenticator = MAuthAuthenticator()
+        authenticator.init_app(self.app)
+
         @self.app.route("/lemon", methods=['GET'])
         def test_url_open():
             return "Ping"
 
         client = self.app.test_client()
-        # protected URL
-        rv = client.get("/")
-        self.assertEqual(412, rv.status_code)
+
         # open URL
         rv = client.get("/lemon")
         self.assertEqual(200, rv.status_code)
@@ -135,6 +156,7 @@ class MAuthAthenticatorTestCase(unittest.TestCase):
         self.app.config['MAUTH_BASE_URL'] = "https://mauth-sandbox.imedidata.net"
         self.app.config['MAUTH_VERSION'] = "v2"
         self.app.config['MAUTH_MODE'] = "local"
+
         @self.app.route("/", methods=['GET'])
         @requires_authentication
         def test_url_closed():
@@ -144,7 +166,7 @@ class MAuthAthenticatorTestCase(unittest.TestCase):
 
         with mock.patch("flask_mauth.auth.LocalAuthenticator") as local_auth:
             m_auth = local_auth.return_value
-            m_auth.authenticate.return_value = True
+            m_auth.is_authentic.return_value = True, 200, ""
             authenticator = MAuthAuthenticator()
             authenticator.init_app(self.app)
             # protected URL

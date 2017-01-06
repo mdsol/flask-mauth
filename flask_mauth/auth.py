@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import json
 import logging
 from functools import wraps
 
@@ -103,8 +104,8 @@ class MAuthAuthenticator(object):
 
         :param request: Request object
         :type request: werkzeug.wrappers.BaseRequest
-        :return: Is the request authenticated?
-        :rtype: bool
+        :return: Is the request authentic, Status Code, Message
+        :rtype: bool, int, str
         """
         return self._authenticator.is_authentic(request)
 
@@ -129,8 +130,12 @@ def requires_authentication(f):
     @wraps(f)
     def wrapper(*args, **kwargs):
         authenticator = current_app.authenticator
-        if not authenticator.authenticate(request):
+        authentic, status, message = authenticator.authenticate(request)
+        if not authentic:
             # TODO: do we return the underlying error?  Currently going into the log
-            return Response('Precondition failed', 412)
+            _message = json.dumps(dict(errors=dict(mauth=[message])))
+            return Response(response=_message,
+                            status=status,
+                            mimetype="application/json")
         return f(*args, **kwargs)
     return wrapper

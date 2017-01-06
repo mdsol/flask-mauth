@@ -83,9 +83,11 @@ class AbstractMAuthAuthenticator(object):
             authentic = self.authenticate(request)
         except InauthenticError as exc:
             self.log_authentication_error(request, str(exc))
+            return False, 401, str(exc)
         except UnableToAuthenticateError as exc:
             self.log_authentication_error(request, str(exc))
-        return authentic
+            return False, 500, str(exc)
+        return authentic, 200 if authentic else 401, ''
 
     def authentication_present(self, request):
         """
@@ -205,6 +207,7 @@ class AbstractMAuthAuthenticator(object):
             app_uuid = "MISSING"
         self._logger.info("MAuth Request: App UUID: {}; URL: {}".format(app_uuid,
                                                                         request.path))
+
     @property
     def authenticator_type(self):
         """
@@ -265,10 +268,9 @@ class RemoteAuthenticator(AbstractMAuthAuthenticator):
             return True
         else:
             # e.g. 500 error
+            # NOTE: this raises the underlying UnableToAuthenticateError
             self.log_mauth_service_response_error(request=request,
                                                   response=response)
-        # Strictly speaking, this is unreachable
-        return False  # pragma: no cover
 
 
 class LocalAuthenticator(AbstractMAuthAuthenticator):

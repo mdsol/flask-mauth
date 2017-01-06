@@ -271,8 +271,10 @@ class TestRemoteAuthenticator(_TestAuthenticator, TestCase):
                             path="/mauth/v2/mauth.json?open=1",
                             method="GET",
                             data="")
-        authentic = self.authenticator.is_authentic(request)
+        authentic, status, message = self.authenticator.is_authentic(request)
         self.assertTrue(authentic)
+        self.assertEqual(200, status)
+        self.assertEqual('', message)
 
     @patch.object(RemoteAuthenticator, "authenticate")
     def test_is_authentic_fails(self, authenticate):
@@ -283,20 +285,25 @@ class TestRemoteAuthenticator(_TestAuthenticator, TestCase):
                             path="/mauth/v2/mauth.json?open=1",
                             method="GET",
                             data="")
-        authentic = self.authenticator.is_authentic(request)
+        authentic, status, message = self.authenticator.is_authentic(request)
         self.assertFalse(authentic)
+        self.assertEqual(401, status)
 
     @patch.object(RemoteAuthenticator, "authenticate")
     def test_authenticate_error_conditions_inauthentic(self, authenticate):
         """ We get a False back if we raise a InauthenticError """
-        authenticate.side_effect = InauthenticError()
+        authenticate.side_effect = InauthenticError("Authentication Failed. No mAuth signature present; "
+                                                    "X-MWS-Authentication header is blank.")
         request = mock.Mock(headers={settings.x_mws_time: self.mws_time,
                                      settings.x_mws_authentication: "MWS %s:somethingelse" % self.app_uuid},
                             path="/mauth/v2/mauth.json?open=1",
                             method="GET",
                             data="")
-        authentic = self.authenticator.is_authentic(request)
+        authentic, status, message = self.authenticator.is_authentic(request)
         self.assertFalse(authentic)
+        self.assertEqual(401, status)
+        self.assertEqual("Authentication Failed. No mAuth signature present; "
+                                                    "X-MWS-Authentication header is blank.", message)
 
     @patch.object(RemoteAuthenticator, "authenticate")
     def test_authenticate_error_conditions_unable(self, authenticate):
@@ -307,8 +314,10 @@ class TestRemoteAuthenticator(_TestAuthenticator, TestCase):
                             path="/mauth/v2/mauth.json?open=1",
                             method="GET",
                             data="")
-        authentic = self.authenticator.is_authentic(request)
+        authentic, status, message = self.authenticator.is_authentic(request)
         self.assertFalse(authentic)
+        self.assertEqual(500, status)
+        self.assertEqual("", message)
 
     @patch.object(RemoteAuthenticator, "signature_valid")
     @patch.object(RemoteAuthenticator, "authentication_present")
@@ -321,12 +330,14 @@ class TestRemoteAuthenticator(_TestAuthenticator, TestCase):
                             path="/mauth/v2/mauth.json?open=1",
                             method="GET",
                             data="")
-        token_valid.side_effect = InauthenticError()
+        token_valid.side_effect = InauthenticError("")
         time_valid.return_value = True
         authentication_present.return_value = True
         signature_valid.return_value = True
-        authentic = self.authenticator.is_authentic(request)
+        authentic, status, message = self.authenticator.is_authentic(request)
         self.assertFalse(authentic)
+        self.assertEqual(401, status)
+        self.assertEqual("", message)
 
     @patch.object(RemoteAuthenticator, "signature_valid")
     @patch.object(RemoteAuthenticator, "authentication_present")
@@ -340,11 +351,13 @@ class TestRemoteAuthenticator(_TestAuthenticator, TestCase):
                             method="GET",
                             data="")
         token_valid.return_value = True
-        time_valid.side_effect = InauthenticError()
+        time_valid.side_effect = InauthenticError("")
         authentication_present.return_value = True
         signature_valid.return_value = True
-        authentic = self.authenticator.is_authentic(request)
+        authentic, status, message = self.authenticator.is_authentic(request)
         self.assertFalse(authentic)
+        self.assertEqual(401, status)
+        self.assertEqual("", message)
 
     @patch.object(RemoteAuthenticator, "signature_valid")
     @patch.object(RemoteAuthenticator, "authentication_present")
@@ -361,10 +374,12 @@ class TestRemoteAuthenticator(_TestAuthenticator, TestCase):
 
         token_valid.return_value = True
         time_valid.return_value = True
-        authentication_present.side_effect = InauthenticError()
+        authentication_present.side_effect = InauthenticError("")
         signature_valid.return_value = True
-        authentic = self.authenticator.is_authentic(request)
+        authentic, status, message = self.authenticator.is_authentic(request)
         self.assertFalse(authentic)
+        self.assertEqual(401, status)
+        self.assertEqual("", message)
 
     @patch.object(RemoteAuthenticator, "signature_valid")
     @patch.object(RemoteAuthenticator, "authentication_present")
@@ -381,9 +396,11 @@ class TestRemoteAuthenticator(_TestAuthenticator, TestCase):
         token_valid.return_value = True
         time_valid.return_value = True
         authentication_present.return_value = True
-        signature_valid.side_effect = InauthenticError()
-        authentic = self.authenticator.is_authentic(request)
+        signature_valid.side_effect = InauthenticError("")
+        authentic, status, message = self.authenticator.is_authentic(request)
         self.assertFalse(authentic)
+        self.assertEqual(401, status)
+        self.assertEqual("", message)
 
     @patch.object(RemoteAuthenticator, "signature_valid")
     @patch.object(RemoteAuthenticator, "authentication_present")
@@ -557,8 +574,9 @@ class TestLocalAuthenticator(_TestAuthenticator, TestCase):
                             path="/mauth/v2/mauth.json?open=1",
                             method="GET",
                             data="")
-        authentic = self.authenticator.is_authentic(request)
+        authentic, status, message = self.authenticator.is_authentic(request)
         self.assertTrue(authentic)
+        self.assertEqual(200, status)
 
     @patch.object(LocalAuthenticator, "authenticate")
     def test_is_authentic_fails(self, authenticate):
@@ -569,7 +587,7 @@ class TestLocalAuthenticator(_TestAuthenticator, TestCase):
                             path="/mauth/v2/mauth.json?open=1",
                             method="GET",
                             data="")
-        authentic = self.authenticator.is_authentic(request)
+        authentic, status, message = self.authenticator.is_authentic(request)
         self.assertFalse(authentic)
 
     @patch.object(LocalAuthenticator, "signature_valid")
@@ -587,7 +605,7 @@ class TestLocalAuthenticator(_TestAuthenticator, TestCase):
         time_valid.return_value = True
         authentication_present.return_value = True
         signature_valid.return_value = True
-        authentic = self.authenticator.is_authentic(request)
+        authentic, status, message = self.authenticator.is_authentic(request)
         self.assertFalse(authentic)
 
     @patch.object(LocalAuthenticator, "signature_valid")
@@ -605,7 +623,7 @@ class TestLocalAuthenticator(_TestAuthenticator, TestCase):
         time_valid.side_effect = InauthenticError()
         authentication_present.return_value = True
         signature_valid.return_value = True
-        authentic = self.authenticator.is_authentic(request)
+        authentic, status, message = self.authenticator.is_authentic(request)
         self.assertFalse(authentic)
 
     @patch.object(LocalAuthenticator, "signature_valid")
@@ -625,7 +643,7 @@ class TestLocalAuthenticator(_TestAuthenticator, TestCase):
         time_valid.return_value = True
         authentication_present.side_effect = InauthenticError()
         signature_valid.return_value = True
-        authentic = self.authenticator.is_authentic(request)
+        authentic, status, message = self.authenticator.is_authentic(request)
         self.assertFalse(authentic)
 
     @patch.object(LocalAuthenticator, "signature_valid")
@@ -644,20 +662,22 @@ class TestLocalAuthenticator(_TestAuthenticator, TestCase):
         time_valid.return_value = True
         authentication_present.return_value = True
         signature_valid.side_effect = InauthenticError()
-        authentic = self.authenticator.is_authentic(request)
+        authentic, status, message = self.authenticator.is_authentic(request)
         self.assertFalse(authentic)
 
     @patch.object(LocalAuthenticator, "authenticate")
     def test_authenticate_error_conditions_inauthentic(self, authenticate):
         """ We get a False back if we raise a InauthenticError """
-        authenticate.side_effect = InauthenticError()
+        authenticate.side_effect = InauthenticError("")
         request = mock.Mock(headers={settings.x_mws_time: self.mws_time,
                                      settings.x_mws_authentication: "MWS %s:somethingelse" % self.app_uuid},
                             path="/mauth/v2/mauth.json?open=1",
                             method="GET",
                             data="")
-        authentic = self.authenticator.is_authentic(request)
+        authentic, status, message = self.authenticator.is_authentic(request)
         self.assertFalse(authentic)
+        self.assertEqual(401, status)
+        self.assertEqual("", message)
 
     @patch.object(LocalAuthenticator, "authenticate")
     def test_authenticate_error_conditions_unable(self, authenticate):
@@ -668,8 +688,10 @@ class TestLocalAuthenticator(_TestAuthenticator, TestCase):
                             path="/mauth/v2/mauth.json?open=1",
                             method="GET",
                             data="")
-        authentic = self.authenticator.is_authentic(request)
+        authentic, status, message = self.authenticator.is_authentic(request)
         self.assertFalse(authentic)
+        self.assertEqual(500, status)
+        self.assertEqual("", message)
 
     @patch.object(LocalAuthenticator, "signature_valid")
     @patch.object(LocalAuthenticator, "authentication_present")
