@@ -51,6 +51,7 @@ To specify routes that need to be authenticated use the `requires_authentication
 
 ```python
     from flask_mauth import MAuthAuthenticator, requires_authentication
+
     @app.route("/some/private/route", methods=["GET"])
     @requires_authentication
     def private_route():
@@ -62,4 +63,22 @@ To specify routes that need to be authenticated use the `requires_authentication
 
 ```
 
+
+Development and Testing
+-----------------------
+We recommend the use of `virtualenv` or `pyenv` for development.
+
+We use [tox](https://tox.readthedocs.io/en/latest/) and [pyenv](https://github.com/yyuu/pyenv) to run the tests::
+
+    $ brew install pyenv pyenv-virtualenv                                   # Follow the instructions to configure the enviroment
+    $ pip install tox tox-pyenv
+    $ pyenv local 2.7.13 3.5.2 3.6.0                                        # take the most recent versions for these
+    $ tox
+    
+Tox will output the status of the tests, as well as coverage data. 
+
+Build Status (Travis-CI)
+------------
+* develop - [![Build Status](https://travis-ci.org/mdsol/flask-mauth.svg?branch=develop)](https://travis-ci.org/mdsol/flask-mauth.svg?branch=develop)
+* master - [![Build Status](https://travis-ci.org/mdsol/flask-mauth.svg?branch=master)](https://travis-ci.org/mdsol/flask-mauth.svg?branch=master)
 
