@@ -63,4 +63,5 @@ class SecurityTokenCacher(object):
         else:
             raise UnableToAuthenticateError("The mAuth service responded "
                                             "with {status}: {body}".format(status=response.status_code,
-                                                                           body=response.content), response)
+                                                                           body=response.content),
+                                            response)
