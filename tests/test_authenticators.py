@@ -488,10 +488,10 @@ class TestLocalAuthenticator(_TestAuthenticator, TestCase):
                             data="")
         with mock.patch("flask_mauth.mauth.authenticators.SecurityTokenCacher") as tok:
             cacher = tok.return_value
-            cacher.get.return_value = json.dumps(dict(app_name="Apple",
-                                                      app_uuid=self.app_uuid,
-                                                      public_key_str=load_key('pub'),
-                                                      created_at="2016-11-20 12:08:46 UTC"))
+            cacher.get.return_value = dict(app_name="Apple",
+                                           app_uuid=self.app_uuid,
+                                           security_token=dict(public_key_str=load_key('pub')),
+                                           created_at="2016-11-20 12:08:46 UTC")
             authenticator = LocalAuthenticator(mauth_auth=mock.Mock(),
                                                logger=mock.Mock(),
                                                mauth_api_version='v2',
@@ -521,10 +521,10 @@ class TestLocalAuthenticator(_TestAuthenticator, TestCase):
                             data="")
         with mock.patch("flask_mauth.mauth.authenticators.SecurityTokenCacher") as tok:
             cacher = tok.return_value
-            cacher.get.return_value = json.dumps(dict(app_name="Apple",
-                                                      app_uuid=self.app_uuid,
-                                                      public_key_str=load_key('pub'),
-                                                      created_at="2016-11-20 12:08:46 UTC"))
+            cacher.get.return_value = dict(app_name="Apple",
+                                           app_uuid=self.app_uuid,
+                                           security_token=dict(public_key_str=load_key('pub')),
+                                           created_at="2016-11-20 12:08:46 UTC")
             authenticator = LocalAuthenticator(mauth_auth=mock.Mock(),
                                                logger=mock.Mock(),
                                                mauth_api_version='v2',
@@ -546,10 +546,10 @@ class TestLocalAuthenticator(_TestAuthenticator, TestCase):
                             data="")
         with mock.patch("flask_mauth.mauth.authenticators.SecurityTokenCacher") as tok:
             cacher = tok.return_value
-            cacher.get.return_value = json.dumps(dict(app_name="Apple",
-                                                      app_uuid=self.app_uuid,
-                                                      public_key_str="pineapple",
-                                                      created_at="2016-11-20 12:08:46 UTC"))
+            cacher.get.return_value = dict(app_name="Apple",
+                                           app_uuid=self.app_uuid,
+                                           security_token=dict(public_key_str="pineapple"),
+                                           created_at="2016-11-20 12:08:46 UTC")
             flush = mock.Mock()
             cacher.flush = flush
             authenticator = LocalAuthenticator(mauth_auth=mock.Mock(),
@@ -563,7 +563,7 @@ class TestLocalAuthenticator(_TestAuthenticator, TestCase):
             # message is what we expect
             # We have a problem here, in python3 the '..BEGIN PUBLIC KEY..' is escaped as a b
             assertRegex(self, str(exc.exception),
-                        r'Public key decryption of signature failed.*-----BEGIN PUBLIC KEY-----.*found')
+                        r'Public key decryption of signature failed.*-----BEGIN RSA PUBLIC KEY-----.*found')
 
     @patch.object(LocalAuthenticator, "authenticate")
     def test_is_authentic_all_ok(self, authenticate):

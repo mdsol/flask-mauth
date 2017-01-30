@@ -22,7 +22,7 @@ class TestRSAPublicKey(unittest.TestCase):
         priv_key = load_key('priv')
         signer = RSARawSigner(private_key_data=priv_key)
         encrypted = signer.sign(string_to_sign)
-        unsigner = RSAPublicKey.load_pkcs1_openssl_pem(pubkey)
+        unsigner = RSAPublicKey.load_pkcs1(pubkey)
         padded = unsigner.public_decrypt(encrypted)
         actual = unsigner.unpad_message(padded)
         self.assertEqual(six.b(hashed), actual,
