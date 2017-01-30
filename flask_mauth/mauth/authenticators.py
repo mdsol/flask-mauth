@@ -307,8 +307,8 @@ class LocalAuthenticator(AbstractMAuthAuthenticator):
 
         expected = Signature.from_request(request=request)
         try:
-            token = json.loads(self.secure_token_cacher.get(app_uuid=app_uuid))
-            rsakey = RSAPublicKey.load_pkcs1_openssl_pem(token.get('public_key_str'))
+            token = self.secure_token_cacher.get(app_uuid=app_uuid)
+            rsakey = RSAPublicKey.load_pkcs1(token.get('security_token').get('public_key_str'))
             padded = rsakey.public_decrypt(signature)
             signature_hash = rsakey.unpad_message(padded)
         except ValueError as exc:
