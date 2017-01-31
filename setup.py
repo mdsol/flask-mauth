@@ -27,6 +27,7 @@ setup(
     author='Geoff Low',
     author_email='glow@mdsol.com',
     description='MAuth Client and Server Library for MAuth',
+    long_description=open('README.md').read(),
     packages=find_packages(exclude=['tests']),
     classifiers=[
         'Framework :: Flask',
@@ -49,6 +50,6 @@ setup(
                       "requests",
                       "requests-mauth"],
     extras_require={
-        'docs': 'sphinx',
+        'docs': ['sphinx', ],
     }
 )
