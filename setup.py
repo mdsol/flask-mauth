@@ -49,6 +49,6 @@ setup(
                       "requests",
                       "requests-mauth"],
     extras_require={
-        'docs': 'sphinx',
+        'docs': ['sphinx', ],
     }
 )
