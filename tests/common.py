@@ -13,7 +13,7 @@ def load_key(keytype='pub'):
     :return: key content
     :rtype: str
     """
-    assert keytype in ('pub', 'priv')
+    assert keytype in ('pub', 'priv', 'pub_pkcs15', 'priv_pkcs15')
     content = ""
     with open(os.path.join(os.path.dirname(__file__),
                              'yourname_mauth.%s.key' % keytype), 'r') as key:
