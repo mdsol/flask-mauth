@@ -1,14 +1,18 @@
 language: python
 python:
-  - "2.7"
-  - "3.5"
-  - "3.6"
-
-# Install script
+- '2.7'
+- '3.5'
+- '3.6'
 install:
-  - python setup.py install
-  - pip install -r tests/requirements.txt
-
+- python setup.py install
+- pip install -r tests/requirements.txt
 script:
-  - python setup.py test
-
+- python setup.py test
+deploy:
+  provider: pypi
+  user: glow-mdsol
+  password:
+    secure: UNH/KudiGkhR8JYrEMpCptL3cXuXCZdsICHDAm9JklC5PBCoMbBwHAXh24WVXU89GVBjr1hXsuNrs6uykaarigObXC9YvpOGNd2sAUFzacUMBEdCVublQaR+QuS8Ur8RlWAHfHgdEvPCzOwAcmIT07ZQflUIZ5N4ABuKCvuuTNdP+81IgXLQhl6p/OYQ2D5RkeJ7CJHQ4Ihehsr/CS0rtOkhDudEgWVaVoZCSD4KqEADaoJLO1CDRXDxid+KVZHdRg9D/55Rs4RrhG9JR9+vsG3r84xYXgMs6gpzbZRgyE6vSXgM2L1rO1IZg0jzpo99dnsyTDWhSJxv1fbB6S4zwPZFk+Q3OKlkz+E2gPOmbWQfibDeOgHP+Zl23vN1gXg1/TNaOt0zDFrXlYqiATYnjHW/z0NVnegFVSuLH14cyJXAZfwvAH9IZzaxJ9xc76N9NeyddKFEZkxlklDYdX1N0NaLEtZ0kUqSjc4b8OAs/ZOV/GiFnVXyjFanu1Jkl7f2MyxaA+Orjsi9v7g7AokYql15QTvk32K/LDleKKCBuDywa+mUXKTTAqZKW6IwVAa7BVKNdJejuScCGWiCTcchFdCvMD1oCdDP7AVeZMNJi85XQ4gBnQchV0NKNnAgUQL9e/VCprN3mYjkjvTrS+mM6w6EjBdBNxEApnICvvtaoKY=
+  on:
+    branch: master
+  distributions: "sdist bdist_wheel"
