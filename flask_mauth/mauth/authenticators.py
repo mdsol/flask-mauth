@@ -308,7 +308,17 @@ class LocalAuthenticator(AbstractMAuthAuthenticator):
         expected = Signature.from_request(request=request)
         try:
             token = self.secure_token_cacher.get(app_uuid=app_uuid)
-            rsakey = RSAPublicKey.load_pkcs1(token.get('security_token').get('public_key_str'))
+            key_text = token.get('security_token').get('public_key_str')
+            if "BEGIN PUBLIC KEY" in key_text:
+                # Load a PKCS#1 PEM-encoded public key
+                rsakey = RSAPublicKey.load_pkcs1_openssl_pem(keyfile=key_text)
+            elif "BEGIN RSA PUBLIC KEY" in key_text:
+                # Loads a PKCS#1.5 PEM-encoded public key
+                rsakey = RSAPublicKey.load_pkcs1(keyfile=key_text, format='PEM')
+            else:
+                # Unable to identify the key type
+                self.secure_token_cacher.flush(app_uuid)
+                raise UnableToAuthenticateError("Unable to identify Public Key type from Signature")
             padded = rsakey.public_decrypt(signature)
             signature_hash = rsakey.unpad_message(padded)
         except ValueError as exc:

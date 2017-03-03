@@ -443,7 +443,6 @@ class TestRemoteAuthenticator(_TestAuthenticator, TestCase):
         self.assertEqual('REMOTE', self.authenticator.authenticator_type)
 
 
-
 class TestLocalAuthenticator(_TestAuthenticator, TestCase):
     def setUp(self):
         self.logger = mock.Mock()
@@ -454,7 +453,7 @@ class TestLocalAuthenticator(_TestAuthenticator, TestCase):
         self.mws_time = "1479392498"
         self.app_uuid = 'b0603e5c-c344-488e-83ba-9290ea8dc17d'
 
-    def generate_headers(self, verb, path, body, mws_time=None, app_uuid=None):
+    def generate_headers(self, verb, path, body, mws_time=None, app_uuid=None, keytype='pkcs1'):
         """
         Generates a Signature String
         :param verb: HTTP verb, eg GET
@@ -468,7 +467,10 @@ class TestLocalAuthenticator(_TestAuthenticator, TestCase):
             mws_time = self.mws_time
         if app_uuid is None:
             app_uuid = self.app_uuid
-        signer = requests_mauth.MAuth(app_uuid=app_uuid, private_key_data=load_key('priv'))
+        key_suffix = "priv"
+        if keytype == 'pkcs15':
+            key_suffix = "priv_pkcs15"
+        signer = requests_mauth.MAuth(app_uuid=app_uuid, private_key_data=load_key(key_suffix))
         signature_string, seconds_since_epoch = signer.make_signature_string(verb=verb, url_path=path, body=body,
                                                                              seconds_since_epoch=mws_time)
         signed_string = signer.signer.sign(signature_string)
@@ -491,6 +493,31 @@ class TestLocalAuthenticator(_TestAuthenticator, TestCase):
             cacher.get.return_value = dict(app_name="Apple",
                                            app_uuid=self.app_uuid,
                                            security_token=dict(public_key_str=load_key('pub')),
+                                           created_at="2016-11-20 12:08:46 UTC")
+            authenticator = LocalAuthenticator(mauth_auth=mock.Mock(),
+                                               logger=mock.Mock(),
+                                               mauth_api_version='v2',
+                                               mauth_base_url='https://mauth-sandbox.imedidata.net')
+
+            result = authenticator.signature_valid(request)
+        self.assertTrue(result)
+
+    def test_authenticates_a_genuine_message_v15(self):
+        """Given an authentic message using pkcs#1.5, we authenticate"""
+        mws_time = int(time.time())
+        headers = self.generate_headers("GET",
+                                        "/mauth/v2/mauth.json",
+                                        "",
+                                        mws_time, keytype='pkcs15')
+        request = mock.Mock(headers=headers,
+                            path="/mauth/v2/mauth.json?open=1",
+                            method="GET",
+                            data="")
+        with mock.patch("flask_mauth.mauth.authenticators.SecurityTokenCacher") as tok:
+            cacher = tok.return_value
+            cacher.get.return_value = dict(app_name="Apple",
+                                           app_uuid=self.app_uuid,
+                                           security_token=dict(public_key_str=load_key('pub_pkcs15')),
                                            created_at="2016-11-20 12:08:46 UTC")
             authenticator = LocalAuthenticator(mauth_auth=mock.Mock(),
                                                logger=mock.Mock(),
@@ -556,14 +583,13 @@ class TestLocalAuthenticator(_TestAuthenticator, TestCase):
                                                logger=mock.Mock(),
                                                mauth_api_version='v2',
                                                mauth_base_url='https://mauth-sandbox.imedidata.net')
-            with self.assertRaises(InauthenticError) as exc:
+            with self.assertRaises(UnableToAuthenticateError) as exc:
                 result = authenticator.signature_valid(request)
             # bad key gets flushed from the cache
             flush.assert_called_once_with(self.app_uuid)
             # message is what we expect
-            # We have a problem here, in python3 the '..BEGIN PUBLIC KEY..' is escaped as a b
             assertRegex(self, str(exc.exception),
-                        r'Public key decryption of signature failed.*-----BEGIN RSA PUBLIC KEY-----.*found')
+                        r'Unable to identify Public Key type from Signature')
 
     @patch.object(LocalAuthenticator, "authenticate")
     def test_is_authentic_all_ok(self, authenticate):
