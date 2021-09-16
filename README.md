@@ -1,5 +1,7 @@
 # Flask MAuth
 
+**NOTE** This library is deprecated, you should be using [mauth-client-python](https://github.com/mdsol/mauth-client-python).  It will be archived
+
 Flask-MAuth is a authentication library for Python server applications receiving MAuth signed requests.  
 
 It is a partial Python port of the code in the [mauth-client-ruby](https://github.com/mdsol/mauth-client-ruby) repository.
